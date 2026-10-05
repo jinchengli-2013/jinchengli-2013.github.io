@@ -271,21 +271,13 @@
 </main>
 
 <script>
-  // ====== 文章清单：在这里添加你的文章 ======
-  const posts = [
-    {
-      title: "我的第一篇文章",
-      date: "2025-01-10",
-      desc: "记录我开始写博客的第一天。",
-      file: "posts/2025-01-10-my-first-post.md"
-    },
-    {
-      title: "Hello World",
-      date: "2025-01-15",
-      desc: "用 Markdown 写文章其实很简单。",
-      file: "posts/2025-01-15-hello-world.md"
-    }
-  ];
+  let posts = [];
+
+async function loadPostsIndex() {
+  const res = await fetch('posts.json?t=' + Date.now());
+  posts = await res.json();
+  renderList();
+}
 
   // ====== 渲染文章列表 ======
   function renderList() {
@@ -346,7 +338,7 @@
     const saved = localStorage.getItem('blog-theme')
       || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     applyTheme(saved);
-    renderList();
+    loadPostsIndex();
   })();
 </script>
 
