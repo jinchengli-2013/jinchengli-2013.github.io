@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我的博客</title>
 
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
 <!-- Markdown 解析 -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <!-- 代码高亮 -->
@@ -298,6 +311,9 @@ async function loadPostsIndex() {
     const reader = document.getElementById('reader');
     reader.style.display = 'block';
     document.getElementById('article').innerHTML = '<div class="loading">加载中…</div>';
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([document.getElementById('article')]);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
