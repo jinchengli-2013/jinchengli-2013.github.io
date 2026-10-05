@@ -1,31 +1,354 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>我的博客</title>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <style>
-    body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
-    .post-list a { display: block; margin: 8px 0; }
-    #content { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
-  </style>
-</head>
-<body>
-  <h1>我的博客</h1>
-  <div class="post-list">
-    <a href="#" onclick="loadPost('posts/2025-01-10-my-first-post.md')">我的第一篇文章</a>
-    <a href="#" onclick="loadPost('posts/2025-01-15-hello-world.md')">Hello World</a>
-  </div>
-  <div id="content"></div>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的博客</title>
 
-  <script>
-    async function loadPost(path) {
-      const res = await fetch(path);
-      const text = await res.text();
-      // 去掉 Jekyll 的 front matter（如果存在）
-      const body = text.replace(/^---[\s\S]*?---\n/, '');
-      document.getElementById('content').innerHTML = marked.parse(body);
+<!-- Markdown 解析 -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- 代码高亮 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" id="hljs-light">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
+
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --text-soft: #5b6470;
+    --border: #e8eaed;
+    --accent: #3b6cf5;
+    --accent-soft: #eaf0ff;
+    --shadow: 0 6px 24px rgba(20, 30, 60, 0.06);
+    --shadow-hover: 0 12px 32px rgba(20, 30, 60, 0.12);
+    --code-bg: #f3f5f8;
+    --radius: 16px;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #0f1115;
+    --card: #171a21;
+    --text: #eaecef;
+    --text-soft: #9aa3b0;
+    --border: #262b33;
+    --accent: #7a9bff;
+    --accent-soft: #1c2333;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.55);
+    --code-bg: #1e222a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.7;
+    transition: background .3s, color .3s;
+  }
+
+  /* ========== 顶部导航 ========== */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: saturate(180%) blur(12px);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    cursor: pointer;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .brand span { color: var(--accent); }
+
+  .theme-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: transform .15s, box-shadow .2s;
+  }
+  .theme-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+
+  /* ========== 主容器 ========== */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ========== 首页头部 ========== */
+  .hero {
+    text-align: center;
+    margin: 20px 0 48px;
+  }
+  .hero h1 {
+    font-size: 40px;
+    margin: 0 0 12px;
+    letter-spacing: -.5px;
+  }
+  .hero p {
+    color: var(--text-soft);
+    font-size: 16px;
+    margin: 0;
+  }
+
+  /* ========== 文章列表 ========== */
+  .post-grid {
+    display: grid;
+    gap: 16px;
+  }
+  .post-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    cursor: pointer;
+    transition: transform .2s, box-shadow .25s, border-color .2s;
+    box-shadow: var(--shadow);
+  }
+  .post-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  }
+  .post-card .date {
+    font-size: 13px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 10px;
+    border-radius: 999px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .post-card h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    letter-spacing: -.2px;
+  }
+  .post-card p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 15px;
+  }
+
+  /* ========== 文章阅读页 ========== */
+  #reader { display: none; }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 28px;
+    transition: transform .15s, box-shadow .2s;
+  }
+  .back-btn:hover { transform: translateX(-2px); box-shadow: var(--shadow); }
+
+  article {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px 44px;
+    box-shadow: var(--shadow);
+  }
+
+  article h1 { font-size: 30px; margin-top: 0; letter-spacing: -.4px; }
+  article h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  article h3 { font-size: 18px; margin-top: 28px; }
+  article p, article li { font-size: 16px; }
+  article a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .2s; }
+  article a:hover { border-bottom-color: var(--accent); }
+  article img { max-width: 100%; border-radius: 10px; }
+  article blockquote {
+    margin: 20px 0;
+    padding: 8px 20px;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--text-soft);
+    border-radius: 0 10px 10px 0;
+  }
+  article code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+  }
+  article pre {
+    background: var(--code-bg);
+    padding: 18px 20px;
+    border-radius: 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+  article pre code { background: none; padding: 0; }
+  article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 15px;
+  }
+  article th, article td {
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+  }
+  article th { background: var(--code-bg); }
+  article hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* ========== 加载状态 ========== */
+  .loading {
+    text-align: center;
+    color: var(--text-soft);
+    padding: 60px 0;
+    font-size: 15px;
+  }
+
+  /* ========== 移动端 ========== */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 30px; }
+    article { padding: 26px 22px; }
+    .nav { padding: 14px 18px; }
+    main { padding: 24px 18px 60px; }
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="#" onclick="showList(); return false;">
+      我的<span>博客</span>
+    </a>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 暗色</button>
+  </div>
+</header>
+
+<main>
+  <!-- 列表页 -->
+  <div id="list">
+    <div class="hero">
+      <h1>你好，欢迎来到我的博客</h1>
+      <p>记录学习、生活，还有我的小想法。</p>
+    </div>
+    <div class="post-grid" id="postGrid"></div>
+  </div>
+
+  <!-- 阅读页 -->
+  <div id="reader">
+    <button class="back-btn" onclick="showList()">← 返回文章列表</button>
+    <article id="article"></article>
+  </div>
+</main>
+
+<script>
+  // ====== 文章清单：在这里添加你的文章 ======
+  const posts = [
+    {
+      title: "我的第一篇文章",
+      date: "2025-01-10",
+      desc: "记录我开始写博客的第一天。",
+      file: "posts/2025-01-10-my-first-post.md"
+    },
+    {
+      title: "Hello World",
+      date: "2025-01-15",
+      desc: "用 Markdown 写文章其实很简单。",
+      file: "posts/2025-01-15-hello-world.md"
     }
-  </script>
+  ];
+
+  // ====== 渲染文章列表 ======
+  function renderList() {
+    const grid = document.getElementById('postGrid');
+    grid.innerHTML = posts.map((p, i) => `
+      <div class="post-card" onclick="openPost(${i})">
+        <span class="date">${p.date}</span>
+        <h2>${p.title}</h2>
+        <p>${p.desc || ''}</p>
+      </div>
+    `).join('');
+  }
+
+  // ====== 打开文章 ======
+  async function openPost(index) {
+    const post = posts[index];
+    document.getElementById('list').style.display = 'none';
+    const reader = document.getElementById('reader');
+    reader.style.display = 'block';
+    document.getElementById('article').innerHTML = '<div class="loading">加载中…</div>';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      const res = await fetch(post.file);
+      if (!res.ok) throw new Error('文章不存在');
+      const raw = await res.text();
+      const body = raw.replace(/^---[\s\S]*?---\n/, '');
+      document.getElementById('article').innerHTML = marked.parse(body);
+      document.querySelectorAll('#article pre code').forEach(el => hljs.highlightElement(el));
+    } catch (e) {
+      document.getElementById('article').innerHTML =
+        '<div class="loading">😥 文章加载失败，请检查文件路径。</div>';
+    }
+  }
+
+  // ====== 返回列表 ======
+  function showList() {
+    document.getElementById('reader').style.display = 'none';
+    document.getElementById('list').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ====== 暗色模式 ======
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️ 亮色' : '🌙 暗色';
+    document.getElementById('hljs-dark').disabled = theme !== 'dark';
+    document.getElementById('hljs-light').disabled = theme === 'dark';
+    localStorage.setItem('blog-theme', theme);
+  }
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  }
+
+  // 初始化
+  (function init() {
+    const saved = localStorage.getItem('blog-theme')
+      || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    applyTheme(saved);
+    renderList();
+  })();
+</script>
+
 </body>
 </html>
