@@ -36,10 +36,10 @@ jobs:
           fs.writeFileSync('posts.json', JSON.stringify(posts, null, 2));
           "
 
-      - name: Commit and pus
+      - name: Commit and push
         run: |
-          git config user.name \"github-actions[bot]\"
-          git config user.email \"github-actions[bot]@users.noreply.github.com\"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add posts.json
-          git diff --cached --quiet || git commit -m \"Auto-update posts index\"
+          git diff --cached --quiet || git commit -m "Auto-update posts index"
           git push
