@@ -36,7 +36,7 @@ jobs:
           fs.writeFileSync('posts.json', JSON.stringify(posts, null, 2));
           "
 
-      - name: Commit and push
+      - name: Commit and pus
         run: |
           git config user.name \"github-actions[bot]\"
           git config user.email \"github-actions[bot]@users.noreply.github.com\"
