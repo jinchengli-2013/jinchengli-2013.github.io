@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我的博客</title>
 
+<!-- 1. Markdown 解析器 -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!-- 2. 代码高亮 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" id="hljs-light">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
+
+<!-- 3. MathJax 数学公式渲染引擎 -->
 <script>
   MathJax = {
     tex: {
@@ -17,13 +26,6 @@
 <script id="MathJax-script" async
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
 </script>
-
-<!-- Markdown 解析 -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<!-- 代码高亮 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" id="hljs-light">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
 
 <style>
   :root {
@@ -273,7 +275,9 @@
       <h1>你好，欢迎来到我的博客</h1>
       <p>记录学习、生活，还有我的小想法。</p>
     </div>
-    <div class="post-grid" id="postGrid"></div>
+    <div class="post-grid" id="postGrid">
+      <div class="loading">正在加载文章列表...</div>
+    </div>
   </div>
 
   <!-- 阅读页 -->
@@ -284,17 +288,30 @@
 </main>
 
 <script>
+  // ====== 全局变量 ======
   let posts = [];
 
-async function loadPostsIndex() {
-  const res = await fetch('posts.json?t=' + Date.now());
-  posts = await res.json();
-  renderList();
-}
+  // ====== 加载文章索引 ======
+  async function loadPostsIndex() {
+    const grid = document.getElementById('postGrid');
+    try {
+      const res = await fetch('posts.json?t=' + Date.now()); // 加上时间戳避免缓存
+      if (!res.ok) throw new Error('Index not found');
+      posts = await res.json();
+      renderList();
+    } catch (e) {
+      console.error('加载 posts.json 失败:', e);
+      grid.innerHTML = '<div class="loading">😥 加载文章列表失败，请检查 posts.json 是否存在。</div>';
+    }
+  }
 
   // ====== 渲染文章列表 ======
   function renderList() {
     const grid = document.getElementById('postGrid');
+    if (posts.length === 0) {
+      grid.innerHTML = '<div class="loading">还没有文章，快去写一篇吧！</div>';
+      return;
+    }
     grid.innerHTML = posts.map((p, i) => `
       <div class="post-card" onclick="openPost(${i})">
         <span class="date">${p.date}</span>
@@ -311,19 +328,30 @@ async function loadPostsIndex() {
     const reader = document.getElementById('reader');
     reader.style.display = 'block';
     document.getElementById('article').innerHTML = '<div class="loading">加载中…</div>';
-    if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise([document.getElementById('article')]);
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
       const res = await fetch(post.file);
       if (!res.ok) throw new Error('文章不存在');
       const raw = await res.text();
+      
+      // 去掉 Jekyll 风格的 front matter
       const body = raw.replace(/^---[\s\S]*?---\n/, '');
+      
+      // 渲染 Markdown
       document.getElementById('article').innerHTML = marked.parse(body);
+      
+      // 代码高亮
       document.querySelectorAll('#article pre code').forEach(el => hljs.highlightElement(el));
+
+      // 触发 MathJax 渲染数学公式
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([document.getElementById('article')]).catch(function (err) {
+          console.log('MathJax error: ', err.message);
+        });
+      }
     } catch (e) {
+      console.error('加载文章失败:', e);
       document.getElementById('article').innerHTML =
         '<div class="loading">😥 文章加载失败，请检查文件路径。</div>';
     }
@@ -349,7 +377,7 @@ async function loadPostsIndex() {
     applyTheme(cur === 'dark' ? 'light' : 'dark');
   }
 
-  // 初始化
+  // ====== 初始化 ======
   (function init() {
     const saved = localStorage.getItem('blog-theme')
       || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
