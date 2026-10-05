@@ -2,44 +2,30 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>小明的个人主页</title>
+  <title>我的博客</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f7fa;
-      text-align: center;
-      padding: 50px;
-    }
-    .card {
-      background: white;
-      max-width: 500px;
-      margin: 0 auto;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    h1 {
-      color: #2c3e50;
-    }
-    p {
-      color: #555;
-      line-height: 1.8;
-    }
-    a {
-      color: #0366d6;
-    }
+    body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    .post-list a { display: block; margin: 8px 0; }
+    #content { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>你好，我是小明 👋</h1>
-    <p>欢迎来到我的个人网站！</p>
-    <p>我是一名三年级小学生，喜欢乐高、骑自行车和踢足球。</p>
-    <p>
-      这是我的 GitHub 主页：
-      <a href="https://github.com/xiaoming2024">github.com/xiaoming2024</a>
-    </p>
+  <h1>我的博客</h1>
+  <div class="post-list">
+    <a href="#" onclick="loadPost('posts/2025-01-10-my-first-post.md')">我的第一篇文章</a>
+    <a href="#" onclick="loadPost('posts/2025-01-15-hello-world.md')">Hello World</a>
   </div>
+  <div id="content"></div>
+
+  <script>
+    async function loadPost(path) {
+      const res = await fetch(path);
+      const text = await res.text();
+      // 去掉 Jekyll 的 front matter（如果存在）
+      const body = text.replace(/^---[\s\S]*?---\n/, '');
+      document.getElementById('content').innerHTML = marked.parse(body);
+    }
+  </script>
 </body>
 </html>
