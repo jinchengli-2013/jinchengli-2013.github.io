@@ -1,0 +1,45 @@
+name: Generate Posts Index
+
+on:
+  push:
+    paths:
+      - 'posts/**.md'
+  workflow_dispatch:
+
+jobs:
+  generate-index:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate posts.json
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const dir = 'posts';
+          const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
+          const posts = files.map(f => {
+            const full = path.join(dir, f);
+            const raw = fs.readFileSync(full, 'utf8');
+            const titleMatch = raw.match(/^#\s+(.+)$/m);
+            const dateMatch = f.match(/^(\d{4}-\d{2}-\d{2})/);
+            const stat = fs.statSync(full);
+            return {
+              title: titleMatch ? titleMatch[1] : f.replace('.md',''),
+              date: dateMatch ? dateMatch[1] : stat.mtime.toISOString().slice(0,10),
+              file: 'posts/' + f
+            };
+          }).sort((a,b) => b.date.localeCompare(a.date));
+          fs.writeFileSync('posts.json', JSON.stringify(posts, null, 2));
+          "
+
+      - name: Commit and push
+        run: |
+          git config user.name \"github-actions[bot]\"
+          git config user.email \"github-actions[bot]@users.noreply.github.com\"
+          git add posts.json
+          git diff --cached --quiet || git commit -m \"Auto-update posts index\"
+          git push
