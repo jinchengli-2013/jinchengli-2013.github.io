@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上传文章（本地工具）</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         background: #f7f8fa; display: flex; justify-content: center;
+         align-items: center; min-height: 100vh; margin: 0; }
+  .box { background: white; padding: 32px; border-radius: 16px;
+         box-shadow: 0 6px 24px rgba(20,30,60,0.08); width: 440px; }
+  h1 { font-size: 20px; margin-top: 0; }
+  .hint { background: #fff3cd; border: 1px solid #ffeeba; color: #856404;
+          padding: 10px 14px; border-radius: 8px; font-size: 13px;
+          margin-bottom: 20px; line-height: 1.6; }
+  label { display: block; margin: 14px 0 6px; font-size: 14px; color: #555; }
+  input[type="text"], input[type="file"] {
+    width: 100%; padding: 10px; border: 1px solid #ddd;
+    border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+  button { margin-top: 22px; width: 100%; padding: 12px;
+           background: #3b6cf5; color: white; border: none;
+           border-radius: 10px; font-size: 15px; cursor: pointer; }
+  button:disabled { background: #aaa; cursor: not-allowed; }
+  #status { margin-top: 14px; font-size: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>上传 Markdown 文章</h1>
+  <div class="hint">
+    本工具仅在你电脑上运行。Token 保存在浏览器内存中，关闭页面后清除，不会上传到任何地方。
+  </div>
+
+  <label>你的 GitHub Token</label>
+  <input type="password" id="token" placeholder="粘贴 github_pat_...">
+
+  <label>文件名（以 .md 结尾）</label>
+  <input type="text" id="filename" placeholder="2026-10-07-my-article.md">
+
+  <label>选择 Markdown 文件</label>
+  <input type="file" id="fileInput" accept=".md">
+
+  <button id="uploadBtn" onclick="uploadFile()">上传到 GitHub</button>
+  <div id="status"></div>
+</div>
+
+<script>
+  const OWNER = 'jinchengli-2013';
+  const REPO  = 'jinchengli-2013.github.io';
+  const BRANCH = 'main';
+
+  async function uploadFile() {
+    const token = document.getElementById('token').value.trim();
+    const filename = document.getElementById('filename').value.trim();
+    const fileInput = document.getElementById('fileInput');
+    const status = document.getElementById('status');
+    const btn = document.getElementById('uploadBtn');
+
+    if (!token) { status.textContent = '❌ 请输入 Token'; status.style.color = '#d9534f'; return; }
+    if (!filename || !filename.endsWith('.md')) {
+      status.textContent = '❌ 文件名必须以 .md 结尾'; status.style.color = '#d9534f'; return;
+    }
+    if (!fileInput.files.length) {
+      status.textContent = '❌ 请先选择一个 Markdown 文件'; status.style.color = '#d9534f'; return;
+    }
+
+    const file = fileInput.files[0];
+    const text = await file.text();
+    const base64Content = btoa(unescape(encodeURIComponent(text)));
+    const path = `posts/${filename}`;
+    const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`;
+
+    btn.disabled = true;
+    status.textContent = '⏳ 正在上传…';
+    status.style.color = '#555';
+
+    try {
+      // 检查文件是否已存在
+      let sha = null;
+      const checkRes = await fetch(url, {
+        headers: { 'Authorization': `token ${token}` }
+      });
+      if (checkRes.ok) {
+        const existing = await checkRes.json();
+        sha = existing.sha;
+      }
+
+      const body = { message: `Upload ${filename}`, content: base64Content, branch: BRANCH };
+      if (sha) body.sha = sha;
+
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        status.textContent = '✅ 上传成功！GitHub Actions 会自动更新文章列表。';
+        status.style.color = '#28a745';
+      } else {
+        const err = await res.json();
+        status.textContent = `❌ 失败：${err.message}`;
+        status.style.color = '#d9534f';
+      }
+    } catch (e) {
+      status.textContent = `❌ 网络错误：${e.message}`;
+      status.style.color = '#d9534f';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
