@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>讨论区 - 我的博客</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --card: #ffffff; --text: #1a1a1a; --text-soft: #5b6470;
+    --border: #e8eaed; --accent: #3b6cf5; --shadow: 0 6px 24px rgba(20,30,60,0.06);
+    --radius: 16px;
+  }
+  html[data-theme="dark"] {
+    --bg: #0f1115; --card: #171a21; --text: #eaecef; --text-soft: #9aa3b0;
+    --border: #262b33; --accent: #7a9bff; --shadow: 0 6px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         line-height: 1.7; transition: background .3s, color .3s; }
+  header { position: sticky; top: 0; z-index: 10;
+           backdrop-filter: saturate(180%) blur(12px);
+           background: color-mix(in srgb, var(--bg) 85%, transparent);
+           border-bottom: 1px solid var(--border); }
+  .nav { max-width: 860px; margin: 0 auto; padding: 16px 24px;
+         display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-size: 18px; font-weight: 700; color: var(--text); text-decoration: none; }
+  .brand span { color: var(--accent); }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-link { color: var(--text-soft); text-decoration: none; font-size: 14px;
+              padding: 6px 10px; border-radius: 8px; transition: color .2s; }
+  .nav-link:hover { color: var(--accent); }
+  .theme-btn { background: var(--card); border: 1px solid var(--border);
+               color: var(--text); padding: 8px 14px; border-radius: 10px;
+               cursor: pointer; font-size: 14px; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+  .page-header { text-align: center; margin: 20px 0 36px; }
+  .page-header h1 { font-size: 36px; margin: 0 0 12px; }
+  .page-header p { color: var(--text-soft); font-size: 16px; margin: 0; }
+  .giscus-container { background: var(--card); border: 1px solid var(--border);
+                      border-radius: var(--radius); padding: 32px 28px;
+                      box-shadow: var(--shadow); min-height: 400px; }
+  @media (max-width: 640px) {
+    .page-header h1 { font-size: 28px; }
+    .giscus-container { padding: 20px 16px; }
+    .nav { padding: 14px 18px; }
+    main { padding: 24px 18px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="/">我的<span>博客</span></a>
+    <div class="nav-right">
+      <a class="nav-link" href="/">文章</a>
+      <a class="nav-link" href="/chat.html" style="color:var(--accent);">讨论区</a>
+      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 暗色</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="page-header">
+    <h1>讨论区</h1>
+    <p>在这里留下你的想法，和大家一起交流。</p>
+  </div>
+
+  <div class="giscus-container">
+    <script src="https://giscus.app/client.js"
+            data-repo="jinchengli-2013/jinchengli-2013.github.io"
+            data-repo-id="R_kgDOU8WCbA"
+            data-category="Announcements"
+            data-category-id="DIC_kwDOU8WCbM4DHOBC"
+            data-mapping="specific"
+            data-term="chat-page"
+            data-strict="0"
+            data-reactions-enabled="1"
+            data-emit-metadata="0"
+            data-input-position="top"
+            data-theme="preferred_color_scheme"
+            data-lang="zh-CN"
+            crossorigin="anonymous"
+            async>
+    </script>
+  </div>
+</main>
+
+<script>
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️ 亮色' : '🌙 暗色';
+    localStorage.setItem('blog-theme', theme);
+    const giscusFrame = document.querySelector('iframe.giscus-frame');
+    if (giscusFrame) {
+      giscusFrame.contentWindow.postMessage(
+        { giscus: { setConfig: { theme: theme === 'dark' ? 'dark' : 'light' } } },
+        'https://giscus.app'
+      );
+    }
+  }
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  }
+  (function init() {
+    const saved = localStorage.getItem('blog-theme')
+      || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    applyTheme(saved);
+  })();
+</script>
+
+</body>
+</html>
