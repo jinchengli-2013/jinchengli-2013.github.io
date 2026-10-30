@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我的博客</title>
 
-<!-- 1. Markdown 解析器 -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- Markdown 解析器 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/marked/4.3.0/marked.min.js"></script>
 
-<!-- 2. 代码高亮 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" id="hljs-light">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
+<!-- 代码高亮（BootCDN） -->
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-light">
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
+<script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
-<!-- 3. MathJax 数学公式渲染引擎 -->
+<!-- MathJax 数学公式（BootCDN） -->
 <script>
   MathJax = {
     tex: {
@@ -24,7 +24,7 @@
   };
 </script>
 <script id="MathJax-script" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js">
 </script>
 
 <style>
@@ -93,6 +93,24 @@
     text-decoration: none;
   }
   .brand span { color: var(--accent); }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-link {
+    color: var(--text-soft);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: color .2s, background .2s;
+  }
+  .nav-link:hover {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
 
   .theme-btn {
     background: var(--card);
@@ -264,8 +282,8 @@
     <a class="brand" href="#" onclick="showList(); return false;">
       我的<span>博客</span>
     </a>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <a href="/chat.html" style="color:#5b6470; text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px;">讨论区</a>
+    <div class="nav-right">
+      <a class="nav-link" href="/chat.html">讨论区</a>
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 暗色</button>
     </div>
   </div>
@@ -274,7 +292,6 @@
 <main>
   <!-- 列表页 -->
   <div id="list">
-    <!-- <a href="/chat.html" style="color:#5b6470; text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px;">讨论区</a> -->
     <div class="hero">
       <h1>你好，欢迎来到我的博客</h1>
       <p>记录学习、生活，还有我的小想法。</p>
@@ -299,7 +316,7 @@
   async function loadPostsIndex() {
     const grid = document.getElementById('postGrid');
     try {
-      const res = await fetch('posts.json?t=' + Date.now()); // 加上时间戳避免缓存
+      const res = await fetch('posts.json?t=' + Date.now());
       if (!res.ok) throw new Error('Index not found');
       posts = await res.json();
       renderList();
@@ -338,26 +355,33 @@
       const res = await fetch(post.file);
       if (!res.ok) throw new Error('文章不存在');
       const raw = await res.text();
-      
+
       // 去掉 Jekyll 风格的 front matter
       const body = raw.replace(/^---[\s\S]*?---\n/, '');
-      
+
       // 渲染 Markdown
       document.getElementById('article').innerHTML = marked.parse(body);
-      
+
       // 代码高亮
       document.querySelectorAll('#article pre code').forEach(el => hljs.highlightElement(el));
 
-      // 触发 MathJax 渲染数学公式
-      if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise([document.getElementById('article')]).catch(function (err) {
-          console.log('MathJax error: ', err.message);
-        });
-      }
+      // 渲染数学公式（带重试）
+      renderMath();
     } catch (e) {
       console.error('加载文章失败:', e);
       document.getElementById('article').innerHTML =
         '<div class="loading">😥 文章加载失败，请检查文件路径。</div>';
+    }
+  }
+
+  // ====== 公式渲染（等待 MathJax 就绪） ======
+  function renderMath() {
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([document.getElementById('article')]).catch(function (err) {
+        console.log('MathJax error: ', err.message);
+      });
+    } else {
+      setTimeout(renderMath, 500);
     }
   }
 
